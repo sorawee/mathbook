@@ -3,6 +3,8 @@
 @title{Mathbook}
 @author{Jens Axel Søgaard, 2014}
 
+@(current-language "thai")
+
 @section{Introduction}
 
 The @tt{mathbook} language is designed to write books with mathematical content.

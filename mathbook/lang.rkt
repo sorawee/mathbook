@@ -13,11 +13,13 @@
          (all-from-out "mathbook.rkt" "mathjax.rkt")
          ; (all-from-out scribble/manual)
          (rename-out [module-begin #%module-begin])
+         mathjax-source
          ; manual-doc-style
          ;;; From scribble/manual :
          indexed-racket
-         codeblock codeblock0 code  
+         codeblock codeblock0 code
           racket
+          itemize
          )
 
 

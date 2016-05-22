@@ -1,0 +1,5 @@
+mathbook/compiled
+mathbook/lang/compiled
+test/*.html
+test/*.css
+test/*.js

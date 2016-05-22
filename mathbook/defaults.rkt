@@ -6,7 +6,8 @@
 
 (provide mathbook-file
          downloaded-file
-         add-defaults)
+         add-defaults
+         mathjax-source)
 
 (define (add-property properties pred new)
   (if (ormap pred properties)
@@ -20,7 +21,7 @@
   (build-path (find-system-path 'addon-dir) s))
 
 (define mathjax-source
-  "http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML")
+  (make-parameter "http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"))
 (define extentions "MathJax.Hub.Config({ TeX: {extensions: [\"action.js\",\"cancel.js\"] }});")
 
 (define (add-defaults doc pfx styl extras version?
@@ -51,7 +52,7 @@
                         
                         ; --- MathJax support ---
                         (head-extra  ; This loads MathJax from mathjax-source
-                         `(script ([type "text/javascript"] [src ,mathjax-source])))
+                         `(script ([type "text/javascript"] [src ,(mathjax-source)])))
                         (head-extra ; This loads the given extensions. 
                          ; "action.js" contains \texttip{math}{tip} and others.
                          ; "cancel.js" contains \cancel{math} and others

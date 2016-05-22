@@ -5,7 +5,8 @@
          "on-demand.rkt")
 
 (provide post-process
-         mathbook-doc-style)
+         mathbook-doc-style
+         mathjax-source)
 
 (define (post-process doc)
   (add-defaults doc

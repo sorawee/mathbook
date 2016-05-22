@@ -1,39 +1,34 @@
 #lang racket/base
 (require racket/format
          racket/match
+         racket/list
+         racket/string
          scribble/core
          scribble/decode  ; decode-content
          scribble/manual
+         scribble/html-properties
+         "i18n.rkt"
          (for-syntax syntax/parse racket/base))
 
 (provide aligned
          author
-         def-index 
+         def-index
          exercise
          proof
          section
          subsection
          theorem
+         remark
+         example
+         lemma
          title
          translate
+         definition
          tt
-         current-language
-         danish-language 
-         english-language)
-
-;; The various environments have names. A "language" is a hash
-;; table from english names to names in the other language.
-;; Send translations to jensaxel@soegaard.net or submit a pull
-;; request on Github.
-
-(define english-language #hash())
-(define danish-language
-  #hash( ("Theorem" . "Sætning")
-         ("Proof"   . "Bevis")
-         ("Example" . "Eksempel")))
+         current-language)
 
 (define current-language (make-parameter #f)) ; #f = english
-; (define current-language (make-parameter danish))
+(define english-language-data (hash-ref language-data "english"))
 
 ; translate : string -> string
 ;   if the string s has a translation in the (current-language)
@@ -41,7 +36,11 @@
 (define (translate s)
   (match (current-language)
     [#f s]
-    [lang (hash-ref lang s (λ() s))]))
+    [lang (hash-ref (hash-ref language-data
+                              lang
+                              (λ() english-language-data))
+                    s
+                    (λ() s))]))
 
 #;(define sigplan-extras
     (let ([abs (lambda (s)
@@ -58,84 +57,51 @@
      abstract-style
      (decode-flow strs)))
 
-;; ----------------------------------------
-;; Theorems:
-; syntax : (define-new-theorem name latex-name text)
-;  defines a new theorem environment (using LaTeX nomenclature),
-;  Warning: remember to add \newtheorem{latex-name}{text} to mathbook-style.tex
-(define-syntax (define-new-theorem stx)
-  (syntax-parse stx
-    [(new-theorem name latex-name text)
-     #'(begin
-         (provide name)
-         (define (name . strs)
-           (list
-            #;(part-start 1             ; depth
-                          #f             ; tag-prefix
-                       '()            ; tags
-                       (style #f '()) ; style
-                       "fra new-theorem"       ; title
-                       )
-            (make-nested-flow 
-             ; latex-name ends up as class="latex-name" in the html
-             (make-style latex-name '())
-             (decode-flow strs)))))]))
 
-(define-syntax (define-new-theorems stx)
-  (syntax-parse stx
-    [(define-new-theorems name ...)
-     (define strs (map symbol->string (syntax->datum #'(name ...))))
-     (define caps (map string-titlecase strs))
-     (with-syntax ([(latex-name ...) strs]
-                   [(text ...)       caps])
-       #'(begin
-           (define-new-theorem name latex-name text)
-           ...))]))
-
-; plain         Theorem, Lemma, Corollary, Proposition, Conjecture, Criterion, Algorithm
-; definition    Definition, Condition, Problem, Example
-; remark        Remark, Note, Notation, Claim, Summary, Acknowledgment, Case, Conclusion
-
-;(define-new-theorem theorem "theorem" "Theorem")
-(define-new-theorems theorem lemma corollary proposition conjecture criterion algorithm 
-                     exercise oevelse)
-(define-new-theorems definition condition problem example eksempel)
-(define-new-theorems remark note notation claim summart acknowledgment #;case conclusion)
+(define (define-new-theorem name #:classes [classes '()])
+  (define (theorem-internal strs #:name [theorem-name #f])
+    (let-values ([(s) (match theorem-name [#f ""] [_ (string-append "(" theorem-name ")")])]
+                 [(contents rest) (splitf-at strs content?)]
+                 [(attr-classes) (string-join (list* "theorem-like"
+                                                     (string-downcase name)
+                                                     classes))])
+      (nested-flow (style #f (list (attributes `((class . ,attr-classes)))))
+                   (list* (paragraph plain
+                                     (list* (make-element 'bold (~a (translate name) " "))
+                                            (make-element 'italic s)
+                                            (decode-content contents)))
+                          (decode-flow rest)))))
+  (make-keyword-procedure
+    (λ (kws kw-args . rest)
+      (keyword-apply theorem-internal kws kw-args (list rest)))))
 
 
+(define theorem (define-new-theorem "Theorem" #:classes '("box")))
+(define lemma (define-new-theorem "Lemma" #:classes '("box")))
+(define corollary (define-new-theorem "Corollary"))
+(define proposition (define-new-theorem "Proposition"))
+(define conjecture (define-new-theorem "Conjecture"))
+(define criterion (define-new-theorem "Criterion"))
+(define algorithm (define-new-theorem "Algorithm"))
+(define exercise (define-new-theorem "Exercise"))
 
-#;(define theorem-style (make-style "theorem" '()))
-#;(define (theorem . strs)
-    (make-nested-flow theorem-style (decode-flow strs)))
+(define definition (define-new-theorem "Definition" #:classes '("box")))
+(define example (define-new-theorem "Example" #:classes '("box")))
+;(define-new-theorems condition problem)
 
-#;(define (theorem s . strs)
-    (let ([ss strs])
-      (paragraph plain
-                 (cons (make-element 'theo 
-                                     (decode-content ss))))))
+(define remark (define-new-theorem "Remark"))
+;(define-new-theorems note notation claim summart acknowledgment #;case conclusion)
 
-#;(define (theorem s . strs)
-    (let ([ss strs])
-      (paragraph plain
-                 (cons (make-element 'bold (~a (lookup "Theorem") " "))
-                       (cons (make-element 'italic s)
-                             (decode-content ss))))))
+(define proof (define-new-theorem "Proof"))
 
 ;; ----------------------------------------
 ;; Math Environments
 
 (define (aligned . s)
   (make-element (make-style "relax" '(exact-chars))
-                `("\\[\\begin{aligned}" 
+                `("\\[\\begin{aligned}"
                   ,@s
                   "\\end{aligned}\\]")))
-
-
-(define (proof . s)
-  (make-paragraph plain
-                  (cons (make-element 'bold (~a (translate "Proof") " "))
-                        (decode-content s))))
-
 
 
 ;;;
@@ -147,10 +113,3 @@
 ;   also put the word in the index
 (define (def-index . s)
   (emph (apply as-index s)))
-
-
-
-
-
-
-

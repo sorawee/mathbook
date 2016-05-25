@@ -653,11 +653,18 @@ blockquote > blockquote.SVInsetFlow {
 
 
 /* Mathbook styles */
-blockquote.theorem-like {margin-left: 0; width: 100%;}
-blockquote.theorem-like.box {
+blockquote.theorem-like.body {margin-left: 0; width: 100%;}
+blockquote.theorem-like.body.box {
   border: solid 1px;
   padding: 15px 0px 0px 15px;
   margin-bottom: 15px;
+}
+blockquote.theorem-like.body.nobox {}
+p.proof.suffix {
+  float: right;
+  margin-top: -48px;
+  margin-right: -20px;
+  font-size: 150%;
 }
 
 

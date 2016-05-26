@@ -1,5 +1,7 @@
-mathbook/compiled
+.DS_Store
 mathbook/lang/compiled
+mathbook/compiled
+test/compiled
 test/*.html
 test/*.css
 test/*.js

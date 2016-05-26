@@ -13,6 +13,19 @@ AddOnLoad(function() {
             AddPartTitleOnClick(elem);
         }
     }
+
+    var elems = document.getElementsByClassName("link-show-box");
+    for (var i = 0; i < elems.length; i++) {
+        var elem = elems.item(i);
+        var companion = document.getElementById(
+          elem.id.substring(0, elem.id.length - 5) + '-box');
+        elem.onmouseover = function(){
+          companion.style.visibility = 'visible';
+        }
+        elem.onmouseout = function(){
+          companion.style.visibility = 'hidden';
+        }
+    }
 })
 
 function AddPartTitleOnClick(elem) {

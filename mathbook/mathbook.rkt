@@ -27,6 +27,7 @@
          definition
          tt
          refer
+         tip-here
          current-language)
 
 (define current-language (make-parameter #f)) ; #f = english
@@ -60,18 +61,35 @@
      (decode-flow strs)))
 
 (define theorem-stores '())
+(define tip-stores '())
+
+(define (to-seclink s)
+  (string-join (map string-titlecase (string-split s " ")) "_"))
+
 (define (refer str)
-  (let ([search-result (findf (λ (e) 
-                                (match (car e)
-                                  [#f #f]
-                                  [s (equal? (string-downcase s) (string-downcase str))])) theorem-stores)])
-    ;(cdr search-result)
-    str))
+  (match (findf (λ (e) 
+                  (match (car e)
+                    [#f #f]
+                    [s (equal? (string-downcase s) (string-downcase str))])) theorem-stores)
+    [#f str]
+    [(cons _ (nested-flow (style #f (list (attributes x))) content))
+     (begin
+       (set! tip-stores
+             (cons (nested-flow (style #f (list (attributes `((id . ,(string-append str "-box")) (class . "refcolumn hide-by-default")))))
+                                content)
+                   tip-stores))
+       (element (style #f (list (attributes `((id . ,(string-append str "-link"))
+                                              (class . "link-show-box")))))
+                (seclink (to-seclink str) str #:underline? #f)))]))
+
+(define (tip-here)
+  (let ([ret tip-stores])
+    (set! tip-stores '())
+    ret))
 
 (define (define-new-theorem
           name
-          #:classes [classes '()]
-          #:suffix [suffix ""])
+          #:classes [classes '()])
   (define attr-classes (string-join (list* "theorem-like"
                                            (string-downcase name)
                                            classes)))
@@ -83,15 +101,13 @@
                                                 (match w
                                                   ["\n" (or last-word-newline (begin (set! last-word-newline #t) #f))]
                                                   [_ (begin (set! last-word-newline #f) (content? w))])))])
-      (print contents)
-      (nested-flow (style #f (list (attributes `((class . ,(~a "body " attr-classes))))))
+      (nested-flow (style #f (list (attributes `((class . ,attr-classes)))))
                    (list* (paragraph plain
                                      (list* (make-element 'bold (~a (translate name) " "))
                                             (make-element 'italic s)
                                             (make-element plain ": ")
                                             (decode-content contents)))
-                          (append (decode-flow rest)
-                                  (list (paragraph (style #f (list (attributes `((class . ,(~a "suffix " attr-classes)))))) suffix)))))))
+                          (decode-flow rest)))))
   (make-keyword-procedure
     (λ (kws kw-args . rest)
       (keyword-apply (λ (strs #:name [theorem-name #f])
@@ -99,20 +115,6 @@
                          (set! theorem-stores (cons (cons theorem-name ret) theorem-stores))
                          ret))
                      kws kw-args (list rest)))))
-
-#|(define (theorem-internal strs #:name [theorem-name #f])
-  (let-values ([(s) (match theorem-name [#f ""] [_ (string-append "(" theorem-name ")")])]
-               [(contents rest) (splitf-at strs content?)]
-               [(attr-classes) (string-join (list* "theorem-like"
-                                                   (string-downcase name)
-                                                   classes))])
-    (nested-flow (style #f (list (attributes `((class . ,attr-classes)))))
-                 (list* (paragraph plain
-                                   (list* (make-element 'bold (~a (translate name) " "))
-                                          (make-element 'italic s)
-                                          (decode-content contents)))
-                          (decode-flow rest)))))|#
-
 
 (define theorem (define-new-theorem "Theorem" #:classes '("box")))
 (define lemma (define-new-theorem "Lemma" #:classes '("box")))
@@ -130,7 +132,7 @@
 (define remark (define-new-theorem "Remark"))
 ;(define-new-theorems note notation claim summart acknowledgment #;case conclusion)
 
-(define proof (define-new-theorem "Proof" #:suffix "■"))
+(define proof (define-new-theorem "Proof"))
 
 ;; ----------------------------------------
 ;; Math Environments

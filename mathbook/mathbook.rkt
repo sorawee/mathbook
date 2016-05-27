@@ -28,7 +28,8 @@
          tt
          refer
          tip-here
-         current-language)
+         current-language
+         blank)
 
 (define current-language (make-parameter #f)) ; #f = english
 (define english-language-data (hash-ref language-data "english"))
@@ -153,3 +154,6 @@
 ;   also put the word in the index
 (define (def-index . s)
   (emph (apply as-index s)))
+
+
+(define (blank . s) empty)

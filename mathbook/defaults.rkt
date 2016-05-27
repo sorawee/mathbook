@@ -34,6 +34,8 @@
                       (append
                        ; Add <script>...</script> to the <head>...</head> portion of html.
                        (list 
+                        (head-extra
+                         `(meta ([name "viewport"] [content "width=device-width, initial-scale=1"])))
                         ; --- KaTeX support ---
                         ; Note: KaTeX support is disabled until the project matures.
                         ; var xs = document.getElementsByClassName("katex"); 
